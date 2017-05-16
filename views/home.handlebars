@@ -1,0 +1,43 @@
+<h1>Welcome to Meadowlark Travel.</h1>
+{{> weather}}
+{{!--<div class="weatherWidget">
+	{{#each partials.weather.locations}}
+		<div class="location">
+			<h3>{{name}}</h3>
+			<a href="{{forecastUrl}}">
+				<img src="{{iconUrl}}" alt="{{weather}}"> {{weather}}, {{temp}}
+			</a>
+		</div>
+	{{/each}}
+	<small>Source: <a href="http://www.wunderground.com">Weather Underground</a></small>
+</div>--}}
+
+<ul>
+    {{#each tours}}
+        {{! I'm in a new block...and the context has changed }} 
+        <li>
+            {{name}} - {{price}}
+            {{#if ../currencies}}
+                ({{../currency.abbrev}})
+            {{/if}}
+        </li>
+    {{/each}}
+</ul>
+
+{{#unless currencies}}
+    <p>All prices in {{currency.name}}.</p>
+{{/unless}}
+
+{{#if specialsUrl}}
+    {{! I'm in a new block...but the context hasn't changed (sortof) }}
+    <p>Check out our <a href="{{specialsUrl}}">specials!</p> 
+{{else}}
+    <p>Please check back often for specials.</p> 
+{{/if}}
+<p>
+    {{#each currencies}}
+        <a href="#" class="currency">{{.}}</a> 
+    {{else}}
+        Unfortunately, we currently only accept {{currency.name}}.
+    {{/each}}
+</p>
