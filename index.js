@@ -1,49 +1,92 @@
-const express = require('express')
-const bodyParser = require('body-parser')
-const cookieParser = require('cookie-parser')
-const session = require('express-session')
-const fortune = require('./lib/fortune.js')
-const weatherData = require('./lib/weatherData.js')
-const credentials = require('./lib/credentials.js')
-const formidable = require('formidable')
-const nodemailer = require('nodemailer')
-const emailService = require('./lib/email.js')(credentials)
-const jqupload = require('jquery-file-upload-middleware');
-const app = express()
-
+const http = require('http')
+	, express = require('express')
+	, bodyParser = require('body-parser')
+	, session = require('express-session')
+	, fortune = require('./lib/fortune.js')
+	, weatherData = require('./lib/weatherData.js')
+	, credentials = require('./lib/credentials.js')
+	, formidable = require('formidable')
+	, emailService = require('./lib/email.js')(credentials)
+	, jqupload = require('jquery-file-upload-middleware')
+	, app = express()
 
 const handlebars = require('express-handlebars').create({
     defaultLayout:'main',
     helpers: {
         section: function(name, options){
-            if(!this._sections) this._sections = {};
-            this._sections[name] = options.fn(this);
-            return null;
+            if(!this._sections) this._sections = {}
+            this._sections[name] = options.fn(this)
+            return null
         }
     }
-});
-// const mailTransport = nodemailer.createTransport( {
-// 	// host: 'smtp.***.com',
-// 	// secureConnection: true,
-// 	service: 'Gmail',
-// 	auth: {
-// 		user: credentials.gmail.user,
-// 		pass: credentials.gmail.password
-// 	}
-// })
+})
 
 
-app.disable('x-powered-by');
- 
+// app.enable('trust proxy');
+app.disable('x-powered-by')
 app.engine('handlebars', handlebars.engine)
 app.set('view engine', 'handlebars')
 app.set('port', process.env.PORT || 3001)
-app.use(express.static(__dirname + '/public'))
 
-app.use(bodyParser.urlencoded({ extended: false }))
-// app.use(cookieParser(credentials.cookieSecret))
+// use domains for better error handling
+app.use(function(req, res, next){
+    // create a domain for this request
+    var domain = require('domain').create();
+    // handle errors on this domain
+    domain.on('error', function(err){
+        console.error('DOMAIN ERROR CAUGHT\n', err.stack);
+        try {
+            // failsafe shutdown in 5 seconds
+            setTimeout(function(){
+                console.error('Failsafe shutdown.');
+                process.exit(1);
+            }, 5000);
+
+            // disconnect from the cluster
+            var worker = require('cluster').worker;
+            if(worker) worker.disconnect();
+
+            // stop taking new requests
+            server.close();
+
+            try {
+                // attempt to use Express error route
+                next(err);
+            } catch(error){
+                // if Express error route failed, try
+                // plain Node response
+                console.error('Express error mechanism failed.\n', error.stack);
+                res.statusCode = 500;
+                res.setHeader('content-type', 'text/plain');
+                res.end('Server error.');
+            }
+        } catch(error){
+            console.error('Unable to send 500 response.\n', error.stack);
+        }
+    })
+
+    // add the request and response objects to the domain
+    domain.add(req);
+    domain.add(res);
+
+    // execute the rest of the request chain in the domain
+    domain.run(next);
+});
+
+// logging
+switch(app.get('env')){
+    case 'development':
+    	// compact, colorful dev logging
+    	app.use(require('morgan')('dev'));
+        break;
+    case 'production':
+        app.use(require('morgan')('tiny'));
+        break;
+}
+app.use(express.static(__dirname+'/public'))
+app.use(bodyParser.urlencoded({ extended:false }))
 app.use(session({
-    secret: 'keyboard cat',
+	secret: 'keyboard cat',
     resave: false,
     saveUninitialized: true
 }))
@@ -74,8 +117,6 @@ app.get('/', function (req, res) {
     // console.log(req.cookies)
     // console.log(req.signedCookies)
     
-    // res.cookie('monster', 'nom nom');
-    // res.cookie('signed_monster', 'nom nom', { signed: true });
     res.render('home', {
         currency: {
             name: 'United States dollars',
@@ -196,18 +237,9 @@ app.post('/cart/checkout', function(req, res, next){
 			cart.billing.email, 
 			'Thank You for Book your Trip with Meadowlark',
 			html
-		);
-		// mailTransport.sendMail({
-		// 	from: '"Meadowlark Travel": info@meadowlarktravel.com',
-		// 	to: cart.billing.email,
-		// 	subject: 'Thank You for Book your Trip with Meadowlark',
-		// 	html: html,
-		// 	generateTextFromHtml: true 
-		// }, function(err){
-		// 	if(err) console.error('Unable to send confirmation: ' + err.stack);
-		// }); 
-	});
-	res.render('cart-thank-you', { cart: cart });
+		)
+	})
+	res.render('cart-thank-you', { cart: cart })
 });
 
 // jQuery File Upload endpoint middleware
@@ -225,6 +257,7 @@ app.use('/upload', function(req, res, next){
 
 // for now, we're mocking NewsletterSignup:
 function NewsletterSignup(){
+
 }
 NewsletterSignup.prototype.save = function(cb){
 	cb();
@@ -332,11 +365,18 @@ app.post('/newsletter', function(req, res){
 });
 
 app.get('/newsletter/archive', function(req, res){
-	res.render('newsletter/archive');
-});
+	res.render('newsletter/archive')
+})
 
+app.get('/fail', function (req, res) {
+	throw new Error('Nope!')
+})
 
-
+app.get('/epic-fail', function(req, res){ 
+	process.nextTick(function(){
+		throw new Error('Kaboom!')
+	})
+})
 
 app.use(function (req, res) {
     res.status(404)
@@ -349,6 +389,23 @@ app.use(function (err, req, res, next) {
     res.render('500')
 })
 
-app.listen(app.get('port'), function () {
-    console.log('Express started on http://localhost:' + app.get('port') +'; press Ctrl - C to terminate. ')
-})
+// app.listen(app.get('port'), function () {
+//     console.log('Express started in' + app.get('env')
+// 		+  'http://localhost:' + app.get('port') 
+// 		+ '; press Ctrl - C to terminate. ')
+// })
+
+function startServer() {
+    http.createServer(app).listen(app.get('port'), function(){
+    	console.log('Express started in' + app.get('env')
+		+  'http://localhost:' + app.get('port') 
+		+ '; press Ctrl - C to terminate. ')
+    })
+}
+if(require.main === module){
+    // application run directly; start app server
+    startServer();
+} else {
+    // application imported as a module via "require": export function to create server
+    module.exports = startServer;
+}
