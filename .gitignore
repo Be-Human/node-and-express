@@ -1,9 +1,10 @@
 # ignore packages installed by npm
 node_modules*
 
+data
 # put any other files you don't want to check in here,
 # such as .DS_Store (OSX), *.bak, etc.
 .DS_Store
 
 # let the credentials in your local
-# credentials.js
+credentials.js

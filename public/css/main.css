@@ -4,6 +4,14 @@
    Author's custom styles
    ========================================================================== */
 
+a.currency {
+    text-decoration: none;
+}
+.currency.selected {
+    font-weight: bold;
+    font-size: 150%;
+}
+
 .btn-file {
     position: relative;
     overflow: hidden;

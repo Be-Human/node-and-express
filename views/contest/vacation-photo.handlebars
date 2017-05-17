@@ -18,12 +18,14 @@
 	<div class="form-group">
 		<label for="fieldPhoto" class="col-sm-2 control-label">Vacation photo</label>
 		<div class="col-sm-4">
-			<span class="btn btn-default btn-file">
+			<input type="file" class="form-control" required accept="image/*"
+				id="fieldPhoto" data-url="/upload" name="photo">
+			{{!--<span class="btn btn-default btn-file">
 				Upload
 				<input type="file" class="form-control" required accept="image/*"
 					id="fieldPhoto" data-url="/upload" multiple name="photo">
 			</span>
-			<div id="fileUploads"></div>
+			<div id="fileUploads"></div>--}}
 		</div>
 	</div>
 	<div class="form-group">
@@ -33,7 +35,7 @@
 	</div>
 </form>
 
-{{#section 'jquery'}}
+{{!--{{#section 'jquery'}}
 	<script src="/vendor/jquery-file-upload/js/vendor/jquery.ui.widget.js"></script>
 	<script src="/vendor/jquery-file-upload/js/jquery.iframe-transport.js"></script>
 	<script src="/vendor/jquery-file-upload/js/jquery.fileupload.js"></script>
@@ -53,4 +55,4 @@
 
 		});
 	</script>
-{{/section}}
+{{/section}}--}}
