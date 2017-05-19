@@ -5,7 +5,8 @@ var main = require('./handlers/main.js'),
 	cartValidation = require('./lib/cartValidation.js');
 	contact = require('./handlers/contact.js'),
 	tours = require('./handlers/tours.js'),
-	samples = require('./handlers/sample.js')
+	samples = require('./handlers/sample.js'),
+	api = require('./handlers/api.js')
     
 module.exports = function (app) {
 
@@ -58,5 +59,8 @@ module.exports = function (app) {
 	app.get('/tours/hood-river', tours.hoodRiver)
     app.get('/tours/request-group-rate', tours.requestGroupRate);
 	app.get('/adventures/:subcat/:name', tours.adventure)
-	
+
+	// app.get('/api/attractions', api.attractions)
+	// app.post('/api/attraction', api.postAttraction)
+	// app.get('/api/attraction/:id', api.getAttraction)
 }

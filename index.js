@@ -3,9 +3,11 @@ const http = require('http')
 	, express = require('express')
 	, bodyParser = require('body-parser')
     , vhost = require('vhost')
+    , cors = require('cors')
 	, session = require('express-session')
 	, mongoose = require('mongoose')
     , MongoStore = require('connect-mongo')(session)
+    , static = require('./lib/static.js').map
 	, Vacation = require('./models/vacation.js')
 	, weatherData = require('./lib/weatherData.js')
 	, credentials = require('./lib/credentials.js')
@@ -14,6 +16,9 @@ const http = require('http')
 const handlebars = require('express-handlebars').create({
     defaultLayout:'main',
     helpers: {
+        static: function (name){
+            return require('./lib/static.js').map(name)
+        },
         section: function(name, options){
             if(!this._sections) this._sections = {}
             this._sections[name] = options.fn(this)
@@ -22,11 +27,19 @@ const handlebars = require('express-handlebars').create({
     }
 })
 
+app.use(function(req, res, next){ 
+    var now = new Date();
+    res.locals.logoImage = now.getMonth()==11 && now.getDate()==19 ?
+    static('/img/logo_bud_clark.png') : 
+    static('/img/logo.png');
+    next(); 
+});
+
 // app.enable('trust proxy');
 app.disable('x-powered-by')
 app.engine('handlebars', handlebars.engine)
 app.set('view engine', 'handlebars')
-app.set('port', process.env.PORT || 3001)
+app.set('port', process.env.PORT || 3000)
 
 app.use(express.static(__dirname+'/public'))
 app.use(bodyParser.urlencoded({ extended:false }))
@@ -194,6 +207,57 @@ admin.get('/users', function(req, res){
 
 
 require('./routes.js')(app)
+
+var Attraction = require('./models/attraction.js');
+
+var api = express.Router();
+// var api = express()
+
+// app.use(require('vhost')('api.*', api))
+app.use('/api', api)
+
+api.get('/attractions', function(req, res){
+    Attraction.find({ approved: false }, function(err, attractions){
+        if(err) return res.send({ error: 'Internal error.' });
+        res.json(attractions.map(function(a){
+            return {
+                name: a.name,
+                id: a._id,
+                description: a.description,
+                location: a.location,
+            } 
+        }))
+    });
+})
+api.post('/attraction', function(req, res){
+    var a = new Attraction({
+        name: req.body.name,
+        description: req.body.description,
+        location: { lat: req.body.lat, lng: req.body.lng },
+        history: {
+            event: 'created',
+            email: req.body.email,
+            date: new Date(),
+        },
+        approved: false,
+    });
+    console.log(a)
+    a.save(function(err, a){
+        if(err) return res.send(500, 'Error occurred: database error.')
+        res.json({ id: a._id });
+    })
+})
+api.get('/attraction/:id', function(req, res){
+    Attraction.findById(req.params.id, function(err, a){
+        if(err) return res.send({ error: 'Unable to retrieve attraction.' });
+        res.json({
+            id: a._id, 
+            name: a.name,
+            description: a.description,
+            location: a.location,
+        });
+    });
+});
 
 // add support for auto views
 var autoViews = {};
