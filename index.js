@@ -115,7 +115,6 @@ app.use(session({
 	secret: 'keyboard cat',
     resave: false,
     saveUninitialized: true,
-    store: new MongoStore({ mongooseConnection: mongoose.connection })
 }))
 
 
@@ -207,6 +206,7 @@ admin.get('/users', function(req, res){
 
 
 require('./routes.js')(app)
+require('./controllers/customer.js').registerRoutes(app)
 
 var Attraction = require('./models/attraction.js');
 

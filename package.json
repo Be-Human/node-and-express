@@ -24,6 +24,7 @@
     "mongoose": "^4.9.9",
     "nodemailer": "^4.0.1",
     "q": "^1.5.0",
+    "underscore": "^1.8.3",
     "vhost": "^3.0.2"
   },
   "devDependencies": {
