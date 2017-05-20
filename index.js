@@ -1,4 +1,5 @@
 const http = require('http')
+// const https = require('https')
 	, fs = require('fs')
 	, express = require('express')
 	, bodyParser = require('body-parser')
@@ -40,6 +41,12 @@ app.disable('x-powered-by')
 app.engine('handlebars', handlebars.engine)
 app.set('view engine', 'handlebars')
 app.set('port', process.env.PORT || 3000)
+
+// app.use(require('csurf')());
+// app.use(function(req, res, next) {
+// 	res.locals._csrfToken = req.csrfToken();
+// 	next();
+// });
 
 app.use(express.static(__dirname+'/public'))
 app.use(bodyParser.urlencoded({ extended:false }))
@@ -301,6 +308,27 @@ function startServer() {
 		+ '; press Ctrl - C to terminate. ')
     })
 }
+//https
+// function startServer() {
+// 	var keyFile = __dirname + '/ssl/meadowlark.pem',
+// 		certFile = __dirname + '/ssl/meadowlark.crt';
+// 	if(!fs.existsSync(keyFile) || !fs.existsSync(certFile)) {
+// 		console.error('\n\nERROR: One or both of the SSL cert or key are missing:\n' +
+// 			'\t' + keyFile + '\n' +
+// 			'\t' + certFile + '\n' +
+// 			'You can generate these files using openssl; please refer to the book for instructions.\n');
+// 		process.exit(1);
+// 	}
+// 	var options = {
+// 		key: fs.readFileSync(__dirname + '/ssl/meadowlark.pem'),
+// 		cert: fs.readFileSync(__dirname + '/ssl/meadowlark.crt'),
+// 	};
+//     server = https.createServer(options, app).listen(app.get('port'), function(){
+//       console.log( 'Express started in ' + app.get('env') +
+//         ' mode on port ' + app.get('port') + ' using HTTPS' +
+//         '; press Ctrl-C to terminate.' );
+//     });
+// }
 if(require.main === module){
     // application run directly; start app server
     startServer();
